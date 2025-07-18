@@ -11,27 +11,30 @@ public record ApplicationConfiguration
     
     public bool ShowHelp { get; }
     public bool IsVerbose { get; }
-    public FileInfo? ComponentFile { get; }
     public bool ListTypes { get; }
     public bool ListFields { get; }
     public bool ListProperties { get; }
     public bool ListMethods { get; }
+    public FileInfo? ComponentFile { get; }
+    public List<MethodInvocation> MethodInvocations { get; }
     
     #endregion // =================================================================================
 
     #region Constructor
     
     private ApplicationConfiguration(
-        bool showHelp, bool isVerbose, FileInfo? componentFile,
-        bool listTypes, bool listFields, bool listProperties, bool listMethods)
+        bool showHelp, bool isVerbose, 
+        bool listTypes, bool listFields, bool listProperties, bool listMethods,
+        FileInfo? componentFile, List<MethodInvocation> methodInvocations)
     {
         ShowHelp = showHelp;
         IsVerbose = isVerbose;
-        ComponentFile = componentFile;
         ListTypes = listTypes;
         ListFields = listFields;
         ListProperties = listProperties;
         ListMethods = listMethods;
+        ComponentFile = componentFile;
+        MethodInvocations = methodInvocations;
     }
     
     #endregion // =================================================================================
@@ -42,11 +45,12 @@ public record ApplicationConfiguration
         
         private bool _showHelp;
         private bool _isVerbose;
-        private string? _componentPath;
         private bool _listTypes;
         private bool _listFields;
         private bool _listProperties;
         private bool _listMethods;
+        private string? _componentPath;
+        private readonly List<MethodInvocation> _methodInvocations = [];
         
         #endregion // =============================================================================
         
@@ -103,6 +107,12 @@ public record ApplicationConfiguration
             return this;
         }
         
+        public Builder WithMethodInvocation(MethodInvocation invocation)
+        {
+            _methodInvocations.Add(invocation);
+            return this;
+        }
+        
         public ApplicationConfiguration Build()
         {
             FileInfo? componentFile = null;
@@ -114,8 +124,8 @@ public record ApplicationConfiguration
                     );
             }
             return new ApplicationConfiguration(
-                _showHelp, _isVerbose, componentFile, 
-                _listTypes, _listFields, _listProperties, _listMethods
+                _showHelp, _isVerbose, _listTypes, _listFields, _listProperties, _listMethods, 
+                componentFile, _methodInvocations
                 );
         }
 
@@ -142,7 +152,8 @@ public record ApplicationConfiguration
             }
             catch (BadImageFormatException)
             { 
-                throw new BadImageFormatException(ErrorTemplate.InvalidDotNetAssembly.Format(file.Name));
+                throw new BadImageFormatException(
+                    ErrorTemplate.InvalidDotNetAssembly.Format(file.Name));
             }
             catch (FileLoadException ex)
             {

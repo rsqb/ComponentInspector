@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace ComponentInspector.Resources;
 
 public static class ApplicationConstants
@@ -11,7 +13,7 @@ public static class ApplicationConstants
     
     public static class CommandLineOptions
     {
-        internal const string
+        public const string
             Help             =  "--help", 
             HelpShort        =  "-h", 
             Verbose          =  "--verbose",
@@ -25,7 +27,9 @@ public static class ApplicationConstants
             Methods          =  "--methods",
             MethodsShort     =  "-m",
             All              =  "--all",
-            AllShort         =  "-a";
+            AllShort         =  "-a",
+            Invoke           =  "--invoke",
+            InvokeShort      =  "-i";
     }
     
     #endregion // =================================================================================
@@ -51,6 +55,11 @@ public static class ApplicationConstants
         ["pink"]    =  ConsoleColor.Magenta,
         ["purple"]  =  ConsoleColor.DarkMagenta
     };
+    
+    public static readonly HashSet<string> AllOptions = typeof(CommandLineOptions)
+        .GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
+        .Select(f => (string)f.GetValue(null)!)
+        .ToHashSet();
     
     #endregion
 }

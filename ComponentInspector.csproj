@@ -4,10 +4,22 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
     <ItemGroup>
-      <None Update="example.dll">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
+        <None Remove="ExampleLibrary\**"/>
+        <None Remove=".gitignore"/>
+        <None Remove="LICENSE"/>
+        <None Remove="README.md"/>
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Remove="ExampleLibrary\**"/>
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Remove="ExampleLibrary\**"/>
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="ExampleLibrary\ExampleLibrary.csproj"/>
     </ItemGroup>
 </Project>

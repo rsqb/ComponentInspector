@@ -1,4 +1,5 @@
 using System.Reflection;
+using ComponentInspector.Models;
 
 namespace ComponentInspector.Core.Interfaces;
 
@@ -12,6 +13,7 @@ public interface IComponentInspector
     void ListProperties();
     void ListMethods();
     void DumpAll();
+    void InvokeMethod(MethodInvocation invocation);
     
     #endregion
 }

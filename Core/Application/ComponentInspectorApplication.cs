@@ -42,6 +42,13 @@ public class ComponentInspectorApplication(
                 if (config.ListProperties) inspector.ListProperties();
                 if (config.ListMethods) inspector.ListMethods();
             }
+            if (config.MethodInvocations.Count > 0)
+            {
+                foreach (var invocation in config.MethodInvocations)
+                {
+                    inspector.InvokeMethod(invocation);
+                }
+            }
             
             stopwatch.Stop();
             logger.Write(FormatTemplates.CompletionTime.Format(stopwatch.Elapsed));

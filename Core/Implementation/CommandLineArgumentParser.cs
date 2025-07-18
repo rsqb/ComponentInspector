@@ -14,10 +14,13 @@ internal class CommandLineArgumentParser(ILogger logger) : IArgumentParser
     {
         var builder = new ApplicationConfiguration.Builder();
         var positionalArgs = new List<string>();
-        var priority = new[] { Option.VerboseShort, Option.Verbose, Option.HelpShort, Option.Help };
-        foreach (var arg in priority.Where(args.Contains).Concat(args.Except(priority)))
+        string[] priority = [Option.VerboseShort, Option.Verbose, Option.HelpShort, Option.Help];
+        args = priority.Where(args.Contains).Concat(args.Where(x => !priority.Contains(x))).ToArray();
+        Console.WriteLine(string.Join(", ", ApplicationConstants.AllOptions));
+        for (var i = 0; i < args.Length; i++)
         {
-            if (arg.StartsWith('-'))
+            var arg = args[i];
+            if (arg.IsKnownOption())
             {
                 switch (arg.ToLower())
                 {
@@ -49,6 +52,12 @@ internal class CommandLineArgumentParser(ILogger logger) : IArgumentParser
                     case Option.All:
                         builder.WithFullDump();
                         break;
+                    case Option.InvokeShort:
+                    case Option.Invoke:
+                        var invocation = ParseMethodInvocation(args, ref i);
+                        if (invocation != null)
+                            builder.WithMethodInvocation(invocation);
+                        break;
                 }
             }
             else
@@ -74,6 +83,21 @@ internal class CommandLineArgumentParser(ILogger logger) : IArgumentParser
             config.ListMethods
             ));
         return config;
+    }
+    
+    private MethodInvocation? ParseMethodInvocation(string[] args, ref int currentIndex)
+    {
+        if (currentIndex + 1 >= args.Length || args[currentIndex + 1].IsKnownOption())
+        {
+            throw new ArgumentException("Method invocation (-i/--invoke) requires a method name");
+        }
+        var methodName = args[++currentIndex];
+        var arguments = new List<string>();
+        while (currentIndex + 1 < args.Length && !args[currentIndex + 1].IsKnownOption())
+        {
+            arguments.Add(args[++currentIndex]);
+        }
+        return new MethodInvocation(methodName, arguments.ToArray());
     }
     
     #endregion

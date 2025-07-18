@@ -1,5 +1,6 @@
 using System.Reflection;
 using ComponentInspector.Core.Interfaces;
+using ComponentInspector.Models;
 using ComponentInspector.Resources;
 
 namespace ComponentInspector.Core.Implementation;
@@ -7,11 +8,10 @@ namespace ComponentInspector.Core.Implementation;
 internal class ReflectionComponentInspector(ILogger logger) : IComponentInspector
 {
     #region Fields
-    
-    private const BindingFlags MemberDiscoveryFlags = BindingFlags.Public | BindingFlags.NonPublic | 
-                                                      BindingFlags.Instance | BindingFlags.Static | 
-                                                      BindingFlags.DeclaredOnly;
-    
+
+    private const BindingFlags MemberDiscoveryFlags = BindingFlags.Public | BindingFlags.NonPublic |
+                                                      BindingFlags.Instance | BindingFlags.Static;
+    private readonly Dictionary<Type, object> _instanceCache = new();
     private Assembly? _assembly;
     private Type[]? _types;
     
@@ -111,13 +111,15 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
                 }
             }
             // Methods
-            var methods = type.GetMethods(MemberDiscoveryFlags).Where(m => !m.IsSpecialName).ToArray();
+            var methods = type.GetMethods(MemberDiscoveryFlags);
             if (methods.Length > 0)
             {
                 logger.Write(FormatTemplates.MethodsHeader); 
                 foreach (var method in methods)
                 {
-                    logger.Write("[tab][tab][tab]" + FormatTemplates.ShortMethodSyntax.Format(
+                    var isDeclared = method.DeclaringType == type;
+                    var prefix = isDeclared ? "" : "[dim](inherited)[/] ";
+                    logger.Write("[tab][tab][tab]" + prefix + FormatTemplates.ShortMethodSyntax.Format(
                         GetMemberModifiers(method),
                         method.ReturnType.Name,
                         method.Name,
@@ -131,11 +133,16 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
     public void ListFields() => ListMembers(
         UIStrings.FieldsSection, 
         type => type.GetFields(MemberDiscoveryFlags),
-        (_, field) => FormatTemplates.FieldSyntax.Format(
-            GetMemberModifiers(field), 
-            field.FieldType.Name, 
-            field.Name
-            )
+        (type, field) => 
+        {
+            var isDeclared = field.DeclaringType == type;
+            var prefix = isDeclared ? "" : "[dim](inherited)[/] ";
+            return prefix + FormatTemplates.FieldSyntax.Format(
+                GetMemberModifiers(field), 
+                field.FieldType.Name, 
+                field.Name
+            );
+        }
         );
     
     public void ListProperties() => ListMembers(
@@ -153,14 +160,19 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
     
     public void ListMethods() => ListMembers(
         UIStrings.MethodsSection, 
-        type => type.GetMethods(MemberDiscoveryFlags).Where(method => !method.IsSpecialName).ToArray(),
-        (type, member) => FormatTemplates.MethodSyntax.Format(
-            GetMemberModifiers(member),
-            member.ReturnType.Name,
-            type.Name, 
-            member.Name, 
-            FormatParameters(member)
-            ),
+        type => type.GetMethods(MemberDiscoveryFlags),
+        (type, member) => 
+        {
+            var isDeclared = member.DeclaringType == type;
+            var prefix = isDeclared ? "" : "[dim](inherited)[/] ";
+            return prefix + FormatTemplates.MethodSyntax.Format(
+                GetMemberModifiers(member),
+                member.ReturnType.Name,
+                type.Name, 
+                member.Name, 
+                FormatParameters(member)
+            );
+        },
         groupByType: false
         );
     
@@ -181,6 +193,146 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
             }
             logger.Write("[tab]}[br]");
         }
+    }
+    
+    public void InvokeMethod(MethodInvocation invocation)
+    {
+        EnsureAssemblyLoaded();
+        var lastDot = invocation.FullMethodName.LastIndexOf('.');
+        if (lastDot == -1)
+        {
+            throw new ArgumentException("Invalid method name format. Use: FullTypeName.MethodName");
+        }
+        var typeName = invocation.FullMethodName[..lastDot];
+        var methodName = invocation.FullMethodName[(lastDot + 1)..];
+        var type = _types!.FirstOrDefault(t => t.FullName == typeName);
+        if (type == null)
+        {
+            switch (typeName)
+            {
+                case "Math":
+                    type = typeof(Math);
+                    break;
+                case "Console" or "System.Console":
+                    type = typeof(Console);
+                    break;
+                default:
+                    type = Type.GetType(typeName + ", mscorlib") ??
+                           Type.GetType(typeName + ", System.Runtime");
+                    if (type == null && !typeName.StartsWith("System."))
+                    {
+                        type = Type.GetType("System." + typeName + ", mscorlib") ??
+                               Type.GetType("System." + typeName + ", System.Runtime");
+                    }
+                    if (type == null)
+                    {
+                        throw new TypeLoadException($"Type '{typeName}' not found in assembly or system types");
+                    }
+                    break;
+            }
+        }
+        var methods = type.GetMethods(MemberDiscoveryFlags).Where(m => m.Name == methodName).ToArray();
+        if (methods.Length == 0)
+        {
+            throw new MethodAccessException($"Method '{methodName}' not found in type '{typeName}'");
+        }
+        MethodInfo? method;
+        if (methods.Length == 1)
+        {
+            method = methods[0];
+        }
+        else
+        {
+            method = methods
+                .Where(m => m.GetParameters().Length == invocation.Arguments.Length)
+                .OrderBy(m =>
+                {
+                    return invocation.Arguments.Length switch
+                    {
+                        1 when m.GetParameters()[0].ParameterType == typeof(string) => 0,
+                        1 when m.GetParameters()[0].ParameterType == typeof(object) => 1,
+                        _ => 2
+                    };
+                })
+                .FirstOrDefault();
+            if (method == null)
+            {
+                throw new MethodAccessException($"No overload of '{methodName}' matches {invocation.Arguments.Length} arguments");
+            }
+        }
+        object? instance = null;
+        var wasCached = false;
+        if (!method.IsStatic)
+        {
+            if (type.IsAbstract)
+            {
+                throw new MethodAccessException($"Cannot create instance of abstract type '{typeName}'");
+            }
+            if (!_instanceCache.TryGetValue(type, out instance))
+            {
+                instance = Activator.CreateInstance(type);
+                _instanceCache[type] = instance!;
+            }
+            else
+            {
+                wasCached = true;
+            }
+        }
+        var parameters = method.GetParameters();
+        var convertedArgs = new object?[invocation.Arguments.Length];
+        var formattedArgs = new List<string>();
+        for (var i = 0; i < invocation.Arguments.Length; i++)
+        {
+            var param = parameters[i];
+            var paramType = parameters[i].ParameterType;
+            var paramName = param.Name ?? $"arg{i}";
+            var arg = invocation.Arguments[i];
+            try
+            {
+                if (paramType == typeof(string))
+                {
+                    convertedArgs[i] = arg;
+                    continue;
+                }
+                var underlyingType = Nullable.GetUnderlyingType(paramType);
+                if (underlyingType != null)
+                {
+                    if (string.IsNullOrEmpty(arg) || 
+                        arg.Equals("null", StringComparison.OrdinalIgnoreCase))
+                    {
+                        convertedArgs[i] = null;
+                    }
+                    else
+                    {
+                        convertedArgs[i] = Convert.ChangeType(arg, underlyingType);
+                    }
+                    continue;
+                }
+                convertedArgs[i] = Convert.ChangeType(arg, paramType);
+            }
+            catch (Exception ex)
+            {
+                throw new ArgumentException($"Cannot convert '{invocation.Arguments[i]}' to {parameters[i].ParameterType.Name}: {ex.Message}");
+            }
+            var formattedValue = paramType.Name switch
+            {
+                "String" => $"\"{arg}\"", 
+                "Char" => $"'{arg}'",
+                "Boolean" => arg.ToLower(),
+                _ => arg
+            };
+            formattedArgs.Add($"[dim]{paramType.Name} {paramName}:[/] {formattedValue}");
+        }
+        var prefix = instance == null ? "" : $"[dim]{(wasCached ? "cached" : "new")}: [/]";
+        var suffix = instance == null ? "" : wasCached ? "" : "()";
+        var typeFormat = $"{prefix}[purple]{typeName}[/]{suffix}";
+        logger.Write($"[br][dim]>>[/] [teal]Invoking:[/] {typeFormat}.[sky]{methodName}[/]({string.Join(", ", formattedArgs)})[br]");
+        var result = method.Invoke(instance, convertedArgs);
+        if (method.ReturnType != typeof(void))
+        {
+            result = "None [dim](possibly console output)[/]";
+        }
+        logger.Write($"[dim]>>[/] [sky]Result:[/] {result}[br]");
     }
     
     #endregion // =================================================================================
@@ -242,7 +394,7 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
         }
         var name = type switch 
         {
-            { IsInterface: true } => $"[teal]{type.Name}[/]",
+            { IsInterface: true } => $"[aqua]{type.Name}[/]",
             { IsEnum: true } or { IsValueType: true } => $"[pink]{type.Name}[/]",
             _ when isDelegate => delegateSyntax,
             _ => $"[purple]{type.Name}[/]"
@@ -265,7 +417,7 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
             baseTypes.AddRange(
                 interfaces
                     .Except(interfaces.SelectMany(i => i.GetInterfaces()))
-                    .Select(i => $"[teal]{i.Name}[/]")
+                    .Select(i => $"[aqua]{i.Name}[/]")
             );
         }
         if (baseTypes.Count > 0)
@@ -276,7 +428,7 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
         var fields = type.GetFields(MemberDiscoveryFlags);
         var properties = type.GetProperties(MemberDiscoveryFlags);
         var constructors = type.GetConstructors(MemberDiscoveryFlags);
-        var methods = type.GetMethods(MemberDiscoveryFlags).Where(m => !m.IsSpecialName).ToArray();
+        var methods = type.GetMethods(MemberDiscoveryFlags);
         var nestedTypes = type.GetNestedTypes(MemberDiscoveryFlags);
         var hasContent = enumValues?.Length > 0 || fields.Length > 0 || properties.Length > 0 ||
                          constructors.Length > 0 || methods.Length > 0 || nestedTypes.Length > 0;
@@ -334,7 +486,9 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
         }
         foreach (var method in methods)
         {
-            logger.Write($"{indent}[tab]" + FormatTemplates.ShortMethodSyntax.Format(
+            var isDeclared = method.DeclaringType == type;
+            var prefix = isDeclared ? "" : "[dim](inherited)[/] ";
+            logger.Write($"{indent}[tab]" + prefix + FormatTemplates.ShortMethodSyntax.Format(
                 GetMemberModifiers(method),
                 method.ReturnType.Name,
                 method.Name,
@@ -351,7 +505,7 @@ internal class ReflectionComponentInspector(ILogger logger) : IComponentInspecto
             {
                 var nestedName = nestedType switch 
                 {
-                    { IsInterface: true } => $"[teal]{nestedType.Name}[/]",
+                    { IsInterface: true } => $"[aqua]{nestedType.Name}[/]",
                     { IsEnum: true } or { IsValueType: true } => $"[pink]{nestedType.Name}[/]",
                     _ => $"[purple]{nestedType.Name}[/]"
                 };

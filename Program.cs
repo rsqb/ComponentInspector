@@ -2,10 +2,10 @@
  *  Simple .NET Reflection-based tool for inspecting small .NET assemblies.
  *
  *  Usage:
- *      ComponentInspector.exe [options] [<dll-path>]
+ *      ComponentInspector.exe [<dll-path>] [options]
  * 
  *  Arguments:
- *      <dll-path>          Path to the DLL or EXE component to inspect (default: K19.dll)
+ *      <dll-path>          Path to the DLL or EXE component to inspect, default is: 'example.dll'
  * 
  *  Options:
  *      -h, --help          Show help information
@@ -15,6 +15,8 @@
  *      -p, --properties    List all properties in the component
  *      -m, --methods       List all methods in the component
  *      -a, --all           Show complete assembly structure in C# style
+ *      -i, --invoke        Invoke method(s) with optional arguments, syntax is: 
+ *                          full_type_name.method_name arg1 arg2 ...
  */
 
 using ComponentInspector.Core.Application;
