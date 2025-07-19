@@ -5,18 +5,18 @@ namespace ComponentInspector.Models;
 
 using ErrorTemplate = FormatTemplates.ErrorMessages;
 
-public record ApplicationConfiguration
+internal record ApplicationConfiguration
 {
     #region Properties
     
-    public bool ShowHelp { get; }
-    public bool IsVerbose { get; }
-    public bool ListTypes { get; }
-    public bool ListFields { get; }
-    public bool ListProperties { get; }
-    public bool ListMethods { get; }
-    public FileInfo? ComponentFile { get; }
-    public List<MethodInvocation> MethodInvocations { get; }
+    internal bool ShowHelp { get; }
+    internal bool IsVerbose { get; }
+    internal bool ListTypes { get; }
+    internal bool ListFields { get; }
+    internal bool ListProperties { get; }
+    internal bool ListMethods { get; }
+    internal FileInfo? ComponentFile { get; }
+    internal List<MethodInvocation> MethodInvocations { get; }
     
     #endregion // =================================================================================
 
@@ -39,7 +39,7 @@ public record ApplicationConfiguration
     
     #endregion // =================================================================================
     
-    public sealed class Builder
+    internal sealed class Builder
     {
         #region Fields
         
@@ -56,49 +56,49 @@ public record ApplicationConfiguration
         
         #region Builder pattern
         
-        public Builder WithHelp(bool value = true)
+        internal Builder WithHelp(bool value = true)
         {
             _showHelp = value;
             return this;
         }
         
-        public Builder WithVerbose(bool value = true)
+        internal Builder WithVerbose(bool value = true)
         {
             _isVerbose = value;
             return this;
         }
         
-        public Builder WithComponent(string path)
+        internal Builder WithComponent(string path)
         {
             _componentPath = path;
             return this;
         }
         
-        public Builder WithTypes(bool value = true)
+        internal Builder WithTypes(bool value = true)
         {
             _listTypes = value;
             return this;
         }
         
-        public Builder WithFields(bool value = true)
+        internal Builder WithFields(bool value = true)
         {
             _listFields = value;
             return this;
         }
         
-        public Builder WithProperties(bool value = true)
+        internal Builder WithProperties(bool value = true)
         {
             _listProperties = value;
             return this;
         }
         
-        public Builder WithMethods(bool value = true)
+        internal Builder WithMethods(bool value = true)
         {
             _listMethods = value;
             return this;
         }
         
-        public Builder WithFullDump()
+        internal Builder WithFullDump()
         {
             _listTypes = true;
             _listFields = true;
@@ -107,13 +107,13 @@ public record ApplicationConfiguration
             return this;
         }
         
-        public Builder WithMethodInvocation(MethodInvocation invocation)
+        internal Builder WithMethodInvocation(MethodInvocation invocation)
         {
             _methodInvocations.Add(invocation);
             return this;
         }
         
-        public ApplicationConfiguration Build()
+        internal ApplicationConfiguration Build()
         {
             FileInfo? componentFile = null;
             if (!_showHelp)

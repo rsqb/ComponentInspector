@@ -2,7 +2,7 @@ using System;
 
 namespace ExampleLibrary;
 
-internal enum DeviceStatus { Off, On, Standby, Error }
+public enum DeviceStatus { Off, On, Standby, Error }
 
 public interface IDevice
 {

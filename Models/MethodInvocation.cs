@@ -1,3 +1,3 @@
 namespace ComponentInspector.Models;
 
-public record MethodInvocation(string FullMethodName, string[] Arguments);
+internal record MethodInvocation(string FullMethodName, string[] Arguments);

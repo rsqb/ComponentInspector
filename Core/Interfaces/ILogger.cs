@@ -1,6 +1,6 @@
 namespace ComponentInspector.Core.Interfaces;
 
-public interface ILogger
+internal interface ILogger
 {
     #region Interface properties
     

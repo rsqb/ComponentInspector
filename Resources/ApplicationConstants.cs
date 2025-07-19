@@ -2,18 +2,35 @@ using System.Reflection;
 
 namespace ComponentInspector.Resources;
 
-public static class ApplicationConstants
+internal static class ApplicationConstants
 {
     #region Constants
     
-    public const string 
+    internal const string 
         NewLine               =  "\n",
         Tab                   =  "    ",
-        DefaultComponentPath  =  "example.dll";
+        DefaultArgPrefix      =  "arg",
+        NullString            =  "null",
+        DefaultNamespace      =  "Global",
+        DefaultComponentPath  =  "example.dll"; 
     
-    public static class CommandLineOptions
+    internal static class SystemTypes
     {
-        public const string
+        internal const string
+            String         =  "String",
+            Char           =  "Char",
+            Boolean        =  "Boolean",
+            Math           =  "Math",
+            Console        =  "Console",
+            SystemPrefix   =  "System.",
+            SystemConsole  =  "System.Console",
+            SystemRuntime  =  "System.Runtime",
+            MsCorLib       =  "mscorlib";
+    }
+    
+    internal static class CommandLineOptions
+    {
+        internal const string
             Help             =  "--help", 
             HelpShort        =  "-h", 
             Verbose          =  "--verbose",
@@ -32,11 +49,32 @@ public static class ApplicationConstants
             InvokeShort      =  "-i";
     }
     
+    internal static class Modifiers
+    {
+        internal const string
+            Public             =  "public",
+            Private            =  "private",
+            Protected          =  "protected",
+            Internal           =  "internal",
+            ProtectedInternal  =  "protected internal",
+            Static             =  "static",
+            Abstract           =  "abstract",
+            Sealed             =  "sealed",
+            Interface          =  "interface",
+            Enum               =  "enum",
+            Struct             =  "struct",
+            Delegate           =  "delegate",
+            Class              =  "class",
+            Virtual            =  "virtual",
+            Readonly           =  "readonly",
+            Const              =  "const";
+    }
+    
     #endregion // =================================================================================
     
     #region Readonly fields
     
-    public static readonly Dictionary<string, ConsoleColor> Colors = new()
+    internal static readonly Dictionary<string, ConsoleColor> Colors = new()
     {
         ["white"]   =  ConsoleColor.White,
         ["dim"]     =  ConsoleColor.DarkGray,
@@ -56,7 +94,7 @@ public static class ApplicationConstants
         ["purple"]  =  ConsoleColor.DarkMagenta
     };
     
-    public static readonly HashSet<string> AllOptions = typeof(CommandLineOptions)
+    internal static readonly HashSet<string> AllOptions = typeof(CommandLineOptions)
         .GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
         .Select(f => (string)f.GetValue(null)!)
         .ToHashSet();

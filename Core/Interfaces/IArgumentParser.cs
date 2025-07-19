@@ -2,7 +2,7 @@ using ComponentInspector.Models;
 
 namespace ComponentInspector.Core.Interfaces;
 
-public interface IArgumentParser
+internal interface IArgumentParser
 {
     #region Interface methods
     

@@ -28,3 +28,13 @@ bld/
 # OS files
 .DS_Store
 Thumbs.db
+
+# NuGet packages
+*.nupkg
+packages/
+project.lock.json
+project.fragment.lock.json
+
+# Example DLL files (test assemblies)
+K*.dll
+example.dll

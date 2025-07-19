@@ -3,7 +3,7 @@ using ComponentInspector.Models;
 
 namespace ComponentInspector.Core.Interfaces;
 
-public interface IComponentInspector
+internal interface IComponentInspector
 {
     #region Interface methods
     

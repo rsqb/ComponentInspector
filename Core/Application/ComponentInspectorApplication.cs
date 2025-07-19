@@ -5,12 +5,12 @@ using ComponentInspector.Resources;
 
 namespace ComponentInspector.Core.Application;
 
-public class ComponentInspectorApplication(
+internal class ComponentInspectorApplication(
     ILogger logger, IArgumentParser argumentParser, IComponentInspector inspector)
 {
     #region Methods
     
-    public int Run(string[] args)
+    internal int Run(string[] args)
     {          
         try
         {
@@ -57,7 +57,7 @@ public class ComponentInspectorApplication(
         catch (Exception ex)
         {
             logger.Write($"[error]{ex.Message}[/]");
-            logger.Write($"[verbose]{ex.StackTrace ?? UIStrings.ErrorMessages.NoStackTrace}[/]");
+            logger.Write($"[br][verbose]{ex.StackTrace ?? UIStrings.ErrorMessages.NoStackTrace}[/]");
             return 1;
         }
     }
