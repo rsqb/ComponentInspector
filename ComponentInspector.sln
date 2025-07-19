@@ -11,6 +11,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Documents", "Solut
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Images", "Images", "{471D421A-D09A-4477-B9BE-43F2506D52DF}"
+	ProjectSection(SolutionItems) = preProject
+		DemoImages\code-dump.png = DemoImages\code-dump.png
+		DemoImages\method-invocation.png = DemoImages\method-invocation.png
+		DemoImages\type-listing.png = DemoImages\type-listing.png
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,5 +32,8 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{471D421A-D09A-4477-B9BE-43F2506D52DF} = {B38DCD84-A888-426D-A270-E0B468AC52C3}
 	EndGlobalSection
 EndGlobal

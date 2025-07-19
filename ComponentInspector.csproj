@@ -9,15 +9,18 @@
     </PropertyGroup>
     <ItemGroup>
         <None Remove="ExampleLibrary\**"/>
+        <None Remove="DemoImages\**" />
         <None Remove=".gitignore"/>
         <None Remove="LICENSE"/>
         <None Remove="README.md"/>
     </ItemGroup>
     <ItemGroup>
         <Compile Remove="ExampleLibrary\**"/>
+        <Compile Remove="DemoImages\**" />
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Remove="ExampleLibrary\**"/>
+        <EmbeddedResource Remove="DemoImages\**" />
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="ExampleLibrary\ExampleLibrary.csproj"/>
