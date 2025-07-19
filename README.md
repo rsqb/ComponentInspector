@@ -1,4 +1,9 @@
 # .NET Component Inspector
+![.NET](https://img.shields.io/badge/.NET-9.0-512BD4)
+![C#](https://img.shields.io/badge/C%23-239120?logo=c-sharp&logoColor=white)
+![Type](https://img.shields.io/badge/type-CLI%20Tool-orange)
+![License](https://img.shields.io/badge/license-Proprietary-red)
+
 A command-line tool for inspecting .NET assemblies using reflection. Provides detailed analysis of
 types, members, and assembly structure with support for dynamic method invocation.
 
